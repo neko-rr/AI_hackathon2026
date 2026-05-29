@@ -28,8 +28,8 @@
 
 | 項目 | 内容 |
 |------|------|
-| 作品URL | |
-| デプロイ先 | |
+| 作品URL | http://otameshi1.s3-website-ap-northeast-1.amazonaws.com/ |
+| デプロイ先 | AWS S3（`otameshi1` / ap-northeast-1）— [infra/deploy-s3.ps1](../infra/deploy-s3.ps1) |
 | Chrome確認 | [ ] 済 |
 
 ## バックアップ

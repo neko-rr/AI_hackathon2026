@@ -8,12 +8,19 @@
 ```
 {project-root}/
 ├── README.md              # プロジェクト入口（要約へのリンク）
+├── DESIGN.md              # UI デザインシステム（Google design.md 慣例・任意）
 ├── .gitignore             # 基本除外設定
 ├── .env.example           # 環境変数サンプル（実値は .env に）
 ├── docs/
 │   ├── {event-slug}-summary.md
 │   ├── {event-slug}-regulation-summary.md  # 応募要項ベース
-│   ├── idea.md
+│   ├── ideas/              # 候補アイデア（1ファイル1案）
+│   │   ├── README.md
+│   │   ├── comparison.md
+│   │   ├── template.md
+│   │   └── NN-slug.md
+│   ├── idea.md             # 採用案（決定後）
+│   ├── DESIGN.md           # UI デザインシステム（任意・docs/ 配置可）
 │   ├── tasks.md           # 参加ラウンドのタイムテーブル
 │   └── demo-script.md     # 審査用デモ確認（形式は要約に従う）
 ├── AGENTS.md              # hackathon-agents-md Skillで生成
@@ -44,7 +51,7 @@ src/
 └── ai/           # プロンプト・RAG・エージェントロジック
 
 docs/
-├── architecture.md   # 構成が複雑化したら
+├── DESIGN.md         # UI デザインシステム（docs 集約時。ルート DESIGN.md と同一形式）
 └── api-notes.md      # 外部API調査
 
 tests/                # テストを書く余裕ができたら

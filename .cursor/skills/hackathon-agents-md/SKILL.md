@@ -52,7 +52,8 @@ Task Progress:
 1. `docs/*-regulation-summary.md` — レギュレーション要約（**`verified: true` または `primary_source` ありのみ信頼**）
 2. `docs/*-summary.md` — 大会要約
 3. `docs/tasks.md` — 参加ブロック・当日スケジュール
-4. `docs/idea.md` — アイデア・技術選定
+4. `docs/ideas/comparison.md` — 比較表・議論（確定前）
+5. `docs/idea.md` — **採用アイデア**（決定後）
 5. `README.md` — プロジェクト概要
 
 **レギュレーション要約が未検証の場合:**

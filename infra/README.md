@@ -2,12 +2,20 @@
 
 AWS デプロイ設定を置くディレクトリ。
 
-## 予定
+## デプロイ（現状）
 
 | 方式 | 用途 |
 |------|------|
-| AWS Amplify | フロントエンド Hosting |
+| **S3 静的 Web ホスティング** | フロント公開（`deploy-s3.ps1`） |
+| AWS Amplify | フロント（将来） |
 | AWS SAM | Lambda + API Gateway（必要時） |
+
+```powershell
+./infra/deploy-s3.ps1              # 再デプロイ
+./infra/deploy-s3.ps1 -CreateBucket -MakePublic   # 初回
+```
+
+公開 URL: http://otameshi1.s3-website-ap-northeast-1.amazonaws.com/
 
 ## スタック確定後
 

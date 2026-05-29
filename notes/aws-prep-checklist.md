@@ -31,6 +31,6 @@
 
 ## メモ
 
-- Amplify アプリ名:
-- 公開 URL:
+- Amplify アプリ名: （未使用 — 現状 S3 `otameshi1`）
+- 公開 URL: http://otameshi1.s3-website-ap-northeast-1.amazonaws.com/
 - Bedrock モデル ID:

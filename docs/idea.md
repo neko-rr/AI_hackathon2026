@@ -1,40 +1,44 @@
-# アイデア・コンセプト
+# 採用アイデア
 
-## 一言ピッチ
+> **未決定** — チーム議論後、1案を選んでこのファイルを更新する。  
+> 候補一覧 → [ideas/README.md](ideas/README.md) / 比較表 → [ideas/comparison.md](ideas/comparison.md)
 
-{誰の}{どんな課題}を{どう}解決する
+## 現在の状態
 
-## 背景・課題
+| 項目 | 内容 |
+|------|------|
+| ステータス | **未決定**（テーマ告知前 / 議論前） |
+| 候補数 | 1（練習案） |
+| 参考候補 | [01-yosegi-diary.md](ideas/01-yosegi-diary.md) |
 
-- 
+## 決定後に記入
 
-## 解決策
+| 項目 | 内容 |
+|------|------|
+| 採用案 | [ideas/NN-slug.md](ideas/) |
+| 決定日 | |
+| 決定理由 | |
 
-- 
+### 一言ピッチ
 
-## 差別化ポイント
+{採用案からコピー}
 
-- 
-
-## 技術選定（メモ）
-
-| 項目 | 候補 | 選定理由 |
-|------|------|---------|
-| インフラ | **AWS** | Amplify + Lambda + Bedrock |
-| フロント | {TODO} | Amplify Hosting |
-| バックエンド | Lambda + API Gateway | |
-| AI/LLM | Amazon Bedrock | 自己契約 |
-
-## スコープ
-
-### MVP（必須）
+### MVP（Must）
 
 - [ ] 
 
-### 余力があれば
+### 技術スタック
 
-- [ ] 
+| 項目 | 採用 |
+|------|------|
+| フロント | |
+| バックエンド | |
+| AI/LLM | |
+| インフラ | |
 
-### 今回はやらない
+## 更新手順
 
-- 
+1. [ideas/comparison.md](ideas/comparison.md) で議論・決定
+2. 採用案ファイルのステータスを `selected` に変更
+3. このファイルにピッチ・MVP・技術を転記
+4. [demo-script.md](demo-script.md) / [tasks.md](tasks.md) を更新（→ **hackathon-tasks-plan** Skill）

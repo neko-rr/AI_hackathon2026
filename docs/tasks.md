@@ -80,4 +80,4 @@
 ## ブロッカー・メモ
 
 - テーマ: （10:30 告知後に記入）
-- 作品URL: （デプロイ後に記入）
+- 作品URL: http://otameshi1.s3-website-ap-northeast-1.amazonaws.com/

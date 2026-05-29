@@ -49,7 +49,9 @@
 
 | 項目 | 内容 |
 |------|------|
-| 形式 | `https://xxxxx.amplifyapp.com`（例） |
+| **現在** | http://otameshi1.s3-website-ap-northeast-1.amazonaws.com/ |
+| 方式 | S3 静的 Web ホスティング（`infra/deploy-s3.ps1`） |
+| 将来 | Amplify Hosting（`https://xxxxx.amplifyapp.com` 等） |
 | 確定期限 | **13:00**（審査 13:30 開始） |
 | 記録 | [docs/demo-script.md](demo-script.md) に URL を記載 |
 
