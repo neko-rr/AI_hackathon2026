@@ -29,9 +29,10 @@ export function createFluidFromQuestion(question, fluidType = "liquid") {
   const isSteam = fluidType === "steam";
   return {
     ...DEFAULT_STATE,
-    hue: isSteam ? 38 : hashQuestion(raw) || DEFAULT_STATE.hue,
-    opacity: isSteam ? 0.62 : DEFAULT_STATE.opacity,
-    blur: isSteam ? 10 : DEFAULT_STATE.blur,
+    // 水(下)は青系の狭い帯で「水っぽく」、蒸気(上)は寒色寄り（見た目は白/灰でCSS側が担当）
+    hue: isSteam ? 210 : 190 + (hashQuestion(raw) % 28),
+    opacity: isSteam ? 0.55 : 0.82,
+    blur: isSteam ? 12 : 7,
     speed: isSteam ? 1.15 : DEFAULT_STATE.speed,
     label: raw.slice(0, 8) || "？",
     fluidType,

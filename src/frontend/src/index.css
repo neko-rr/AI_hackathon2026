@@ -487,8 +487,9 @@ body {
   animation: riverWaveSwayFar calc(4.4s / var(--fluid-speed, 1)) ease-in-out infinite;
 }
 
+/* 蒸気の波は白〜灰でうっすら（湯気の雲のイメージ） */
 .fluid--steam .river-wave {
-  fill: hsla(var(--fluid-hue, 38), 65%, 55%, 0.2);
+  fill: hsla(210, 15%, 93%, 0.16);
 }
 
 @keyframes riverDriftFar {
@@ -664,6 +665,26 @@ body {
   opacity: 0.65;
   z-index: 1;
   animation: fluidHeadMorph calc(var(--fluid-flow-duration, 2.8s) * 1.3) ease-in-out infinite;
+}
+
+/* 液体（下へ）＝水っぽく：青く、くっきり、しずく感 */
+.fluid--liquid .fluid-blob {
+  background: radial-gradient(
+    circle at 35% 30%,
+    hsla(197, 95%, 80%, var(--fluid-opacity, 0.85)),
+    hsla(205, 88%, 52%, calc(var(--fluid-opacity, 0.82) * 0.95)) 52%,
+    hsla(212, 82%, 40%, calc(var(--fluid-opacity, 0.82) * 0.82)) 100%
+  );
+}
+
+/* 蒸気（上へ）＝蒸気っぽく：白〜灰でふんわり半透明 */
+.fluid--steam .fluid-blob {
+  background: radial-gradient(
+    circle at 42% 35%,
+    hsla(210, 16%, 97%, calc(var(--fluid-opacity, 0.55) * 0.85)),
+    hsla(210, 12%, 86%, calc(var(--fluid-opacity, 0.55) * 0.5)) 55%,
+    hsla(210, 10%, 80%, 0) 100%
+  );
 }
 
 .fluid-stage.flowing.fluid--liquid .fluid-blob--head {
