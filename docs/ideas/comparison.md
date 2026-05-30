@@ -35,7 +35,7 @@
 | 05 | アイデアタービン | 困りごと→3案ルーレット | 2 | 2 | 2 | 2 | 2 | 10 | candidate | [05-idea-spin-turbine.md](05-idea-spin-turbine.md) |
 | 06 | タービン組み立て図鑑 | 3種類から選んで仕組み学習 | 3 | 3 | 3 | 2 | 2 | 13 | candidate | [06-turbine-builder.md](06-turbine-builder.md) |
 | 07 | タービン日記 | 日記で羽根が光る | 2 | 2 | 3 | 2 | 2 | 11 | candidate | [07-turbine-diary.md](07-turbine-diary.md) |
-| 08 | ことば連鎖タービン | 文章→ピタゴラ連鎖→タービン→電気 | 2 | 3 | 3 | 2 | 2 | 12 | shortlisted | [08-pythagora-turbine-chain.md](08-pythagora-turbine-chain.md) |
+| 08 | 意外発送タービン | 疑問→説明／思いつかない→アイデア配達 | 2 | 3 | 3 | 2 | 2 | 12 | shortlisted | [08-pythagora-turbine-chain.md](08-pythagora-turbine-chain.md) |
 
 **ステータス:** `candidate` → `shortlisted`（上位3）→ `selected`（1案）/ `rejected`
 
@@ -50,8 +50,8 @@
 - **テーマ:** **タービン**
 - **開発:** 10:30〜13:30
 - **参加者:**
-- **shortlisted:** 02, 04, **08**（08=ピタゴラ連鎖案。デモ映え最大だがアニメ工数に注意）
-- **メモ:** 01 rejected。08は02+04+03の合成。連鎖は固定4段に絞れば3時間可。
+- **shortlisted:** 02, 04, **08**（08=**意外発送タービン**：2モード＝わからない／思いつかない）
+- **メモ:** 08 v2 — 主訴求は「自分では思いつかないアイデアを配達」。explain はデモ保険。
 
 ### 最終決定（{日付}）
 
