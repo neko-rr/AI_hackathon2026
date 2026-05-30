@@ -1,24 +1,302 @@
+* {
+  box-sizing: border-box;
+}
+
 :root {
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", sans-serif;
 }
 
 body {
   margin: 0;
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
+  background: #000;
+  color: #e6eefc;
+  overflow: hidden;
 }
 
-.app {
+/* ===== ステージ全体（背景は黒） ===== */
+.stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  transition: background 0.6s ease;
+  overflow: hidden;
+}
+
+/* 明るさレイヤー：タービンが回ると全体が明るくなる */
+.glow-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(170, 210, 255, 0.18),
+    rgba(120, 160, 220, 0.06) 40%,
+    transparent 70%
+  );
+  transition: opacity 0.8s ease;
+  z-index: 1;
+}
+
+.title {
+  position: absolute;
+  top: 18px;
+  left: 0;
+  right: 0;
   text-align: center;
-  padding: 2rem;
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.3em;
+  color: #aac6ff;
+  z-index: 5;
+  text-shadow: 0 0 12px rgba(106, 176, 255, 0.6);
 }
 
-button {
+/* ===== タービン（中央） ===== */
+.turbine-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  text-align: center;
+}
+
+.turbine-svg {
+  display: block;
+}
+
+.turbine-status {
+  margin-top: 8px;
   font-size: 1rem;
-  padding: 0.6rem 1.2rem;
+  color: #cfe2ff;
+  min-height: 1.2em;
+  letter-spacing: 0.1em;
+}
+
+/* ===== 入力パネル（画面下部に固定） ===== */
+.control {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, 92vw);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(16, 24, 40, 0.7);
+  border: 1px solid #2c3a58;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  z-index: 6;
+}
+
+.text-input {
+  flex: 1 1 100%;
+  padding: 8px 12px;
+  font-size: 0.95rem;
   border-radius: 8px;
-  border: 1px solid #888;
+  border: 1px solid #3a4a6a;
+  background: #0c1322;
+  color: #e6eefc;
+  outline: none;
+}
+
+.text-input:focus {
+  border-color: #5fd0ff;
+}
+
+.analyze-btn {
+  padding: 8px 18px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  border: 1px solid #5fd0ff;
+  background: #15324a;
+  color: #cfe2ff;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.analyze-btn:hover:not(:disabled) {
+  box-shadow: 0 0 12px rgba(95, 208, 255, 0.6);
+}
+
+.analyze-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.embed-status {
+  font-size: 0.78rem;
+  color: #aac0e0;
+  white-space: nowrap;
+}
+
+.embed-status.embed-ready {
+  color: #5fd0ff;
+}
+
+.embed-status.embed-off {
+  color: #d0a0a0;
+}
+
+/* ===== 蛇口エリア（右上） ===== */
+.faucet-area {
+  position: absolute;
+  top: 180px;
+  right: 60px;
+  z-index: 4;
+}
+
+.faucet-on {
+  filter: drop-shadow(0 0 10px rgba(95, 208, 255, 0.8));
+}
+
+/* 水流コンテナ */
+.water {
+  position: absolute;
+  top: 50px;
+  left: 0;
+}
+
+/* 水流：左向き吐水口の真下から落ちる（本数・太さは強さで変化） */
+.water-stream {
+  position: absolute;
+  top: 6px;
+  height: 80px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to bottom,
+    rgba(95, 208, 255, 0.9),
+    rgba(95, 208, 255, 0.12)
+  );
+  transform-origin: top center;
+  animation: waterFlow 0.5s linear infinite;
+  box-shadow: 0 0 10px rgba(95, 208, 255, 0.6);
+}
+
+@keyframes waterFlow {
+  0% {
+    opacity: 0.6;
+    transform: scaleY(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.05);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scaleY(0.9);
+  }
+}
+
+/* ===== 扇風機エリア（入力パネルの上） ===== */
+.fan-area {
+  position: absolute;
+  bottom: 210px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 4;
+}
+
+.fan-blades {
+  transform-origin: center;
+}
+
+.fan-blades.spin {
+  animation: fanSpin 0.18s linear infinite;
+  transform-box: fill-box;
+}
+
+@keyframes fanSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 風：下から上へ流れる線 */
+.wind {
+  position: absolute;
+  bottom: 320px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 40vh;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.wind-line {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--i) * 18px);
+  width: 3px;
+  height: 40px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to top,
+    rgba(159, 195, 255, 0),
+    rgba(159, 195, 255, 0.7)
+  );
+  animation: windUp 1s linear infinite;
+  animation-delay: calc(var(--i) * -0.12s);
+}
+
+@keyframes windUp {
+  0% {
+    transform: translateY(0) scaleY(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-46vh) scaleY(1.4);
+    opacity: 0;
+  }
+}
+
+/* ===== スイッチ ===== */
+.switch {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
+  border: 1px solid #4a5a78;
+  background: #1a2336;
+  color: #cfe2ff;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.switch-knob {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #6c7a90;
+  transition: all 0.25s ease;
+}
+
+.switch-on {
+  background: #15324a;
+  border-color: #5fd0ff;
+  box-shadow: 0 0 14px rgba(95, 208, 255, 0.6);
+}
+
+.switch-on .switch-knob {
+  background: #5fd0ff;
+  box-shadow: 0 0 10px rgba(95, 208, 255, 0.9);
+  transform: translateX(4px);
+}
+
+.label {
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
 }
