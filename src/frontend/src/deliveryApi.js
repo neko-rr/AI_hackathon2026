@@ -11,7 +11,6 @@ const API_URL = import.meta.env.VITE_API_URL || "";
 const DELIVERY_TITLE = "届いたアイデア";
 const MAX_BODY_LEN = 300;
 const MAX_HEADLINE_LEN = 40;
-const MIN_BODY_LEN = 100;
 
 function normalizeTurbines(turbines) {
   if (Array.isArray(turbines) && turbines.length) {
@@ -31,9 +30,7 @@ function adaptBody(baseBody, turbinesMap) {
     body = `${body} 可能なら理由を1つ添えて比較すると、判断の精度が上がります。`;
   }
 
-  body = removePromptConditionWords(body);
-
-  return ensureMinBodyLength(body, turbinesMap);
+  return finalizeBody(body);
 }
 
 function normalizeEnding(text) {
@@ -58,38 +55,10 @@ function removePromptConditionWords(text) {
     .trim();
 }
 
-function buildProposalExpansion() {
-  return [
-    "まず試す範囲を一つに絞って、最初の手順を具体的に実行してください。",
-    "次に判断基準を一つ決めて候補を比較し、選んだ理由を短く記録してください。",
-    "最後に結果を見て改善点を一つだけ追加し、次回の行動に反映してください。",
-  ];
-}
-
-function splitSentences(text) {
-  const src = String(text || "").trim();
-  if (!src) return [];
-  return src.match(/[^。.!！?？]+[。.!！?？]?/g) || [];
-}
-
-function forceProposalAfterFirst(text) {
-  const sentences = splitSentences(removePromptConditionWords(normalizeEnding(text)));
-  const first = normalizeEnding(sentences[0] || text || "");
-  const proposals = buildProposalExpansion();
-  const combined = [first, ...proposals].join(" ");
-  return combined;
-}
-
-function ensureMinBodyLength(baseBody, turbinesMap) {
-  let body = forceProposalAfterFirst(baseBody);
+function finalizeBody(baseBody) {
+  let body = removePromptConditionWords(normalizeEnding(baseBody));
   if (!body) {
-    body =
-      "最初に目的を一文で決めてください。まず試す範囲を一つに絞って、最初の手順を具体的に実行してください。次に判断基準を一つ決めて候補を比較し、選んだ理由を短く記録してください。";
-  }
-
-  const expansion = buildProposalExpansion(turbinesMap).join(" ");
-  while (body.length < MIN_BODY_LEN) {
-    body = `${body} ${expansion}`.trim();
+    body = "まず目的を明確にし、試す手順を一つ決めて実行してください。";
   }
   return body.slice(0, MAX_BODY_LEN);
 }
@@ -211,9 +180,7 @@ function normalizePayload(data, input, turbines, skipAdapt = false) {
       const body = String(x.body || "").slice(0, MAX_BODY_LEN);
       return {
         headline: String(x.headline || "").slice(0, MAX_HEADLINE_LEN),
-        body: skipAdapt
-          ? ensureMinBodyLength(body, turbinesMap)
-          : adaptBody(body, turbinesMap),
+        body: skipAdapt ? finalizeBody(body) : adaptBody(body, turbinesMap),
       };
     });
 

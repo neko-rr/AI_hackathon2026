@@ -37,7 +37,6 @@ Output schema (exact keys):
 }
 - deliveryItems: 1 to 3 items.
 - Each body: about 3-5 sentences, under 300 characters.
-- Each body: must be at least 100 Japanese characters.
 - headline: short summary of that answer block, related to the question (not turbines).
 """
 

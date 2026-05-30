@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from schemas import DELIVERY_TITLE, format_turbine_recap
 
-MIN_BODY_LEN = 100
-
-
 def _normalize_ending(text: str) -> str:
     body = (text or "").strip()
     body = body.replace("ですか？", "です。").replace("ですか?", "です。")
@@ -28,47 +25,10 @@ def _remove_condition_words(text: str) -> str:
     return " ".join(body.split())
 
 
-def _proposal_expansion() -> str:
-    return (
-        "まず試す範囲を一つに絞って、最初の手順を具体的に実行してください。"
-        "次に判断基準を一つ決めて候補を比較し、選んだ理由を短く記録してください。"
-        "最後に結果を見て改善点を一つだけ追加し、次回の行動に反映してください。"
-    )
-
-
-def _split_sentences(text: str) -> list[str]:
-    src = (text or "").strip()
-    if not src:
-        return []
-    chunks: list[str] = []
-    buf = ""
-    for ch in src:
-        buf += ch
-        if ch in "。.!！?？":
-            chunks.append(buf.strip())
-            buf = ""
-    if buf.strip():
-        chunks.append(buf.strip())
-    return chunks
-
-
-def _force_proposal_after_first(text: str) -> str:
-    chunks = _split_sentences(_remove_condition_words(_normalize_ending(text)))
-    first = _normalize_ending(chunks[0] if chunks else text)
-    return f"{first} {_proposal_expansion()}".strip()
-
-
-def _ensure_min_length(text: str) -> str:
-    body = _force_proposal_after_first(text)
+def _finalize_body(text: str) -> str:
+    body = _remove_condition_words(_normalize_ending(text))
     if not body:
-        body = (
-            "最初に目的を一文で決めてください。"
-            "まず試す範囲を一つに絞って、最初の手順を具体的に実行してください。"
-            "次に判断基準を一つ決めて候補を比較し、選んだ理由を短く記録してください。"
-        )
-    expansion = _proposal_expansion()
-    while len(body) < MIN_BODY_LEN:
-        body = f"{body} {expansion}".strip()
+        body = "まず目的を明確にし、試す手順を一つ決めて実行してください。"
     return body[:300]
 
 
@@ -80,7 +40,7 @@ def adapt_body(base_body: str, turbines: dict[str, str]) -> str:
         body = body.replace("装置", "仕組み").replace("エネルギー", "力")
     elif diff == "むずかしい":
         body = f"{body} 理由を一つ添えて選択肢を比較すると、判断の精度が上がります。"
-    return _ensure_min_length(body)
+    return _finalize_body(body)
 
 
 def base_answers_for_question(q: str) -> list[dict[str, str]]:
