@@ -88,7 +88,9 @@ Task Progress:
 
 ### Step 5: スコアリング → comparison.md
 
-[mvp-scorer.md](mvp-scorer.md) で採点し、[comparison.md](../../docs/ideas/comparison.md) の比較表を更新:
+[mvp-scorer.md](mvp-scorer.md) で採点し、[comparison.md](../../docs/ideas/comparison.md) の比較表を更新。
+
+**（任意）** 各候補の差別化が弱い場合 → [hackathon-competitive-analysis](../hackathon-competitive-analysis/SKILL.md) focused（15分）を提案。
 
 | ID | 名称 | ピッチ | A〜E | 計 | ステータス | ファイル |
 |----|------|--------|------|-----|-----------|----------|
@@ -144,7 +146,8 @@ AI は **1案を決め打ちしない。** `comparison.md` の shortlisted を�
 ```
 - [ ] Step P1: 制約の確定分を整理
 - [ ] Step P2: comparison.md に議論ルールを記載
-- [ ] Step P3: （任意）ダミーテーマで docs/ideas/ に練習候補を追加
+- [ ] Step P3: （任意）[hackathon-competitive-analysis](../hackathon-competitive-analysis/SKILL.md) で landscape 調査
+- [ ] Step P4: （任意）ダミーテーマで docs/ideas/ に練習候補を追加
 ```
 
 練習候補は `ステータス: candidate` のまま。`idea.md` は「未決定」のまま。
@@ -188,6 +191,7 @@ AI は **1案を決め打ちしない。** `comparison.md` の shortlisted を�
 
 - 大会ドキュメント: [hackathon-summary](../hackathon-summary/SKILL.md)
 - UI デザイン: [hackathon-design-md](../hackathon-design-md/SKILL.md)（採用直後）
+- 競合分析: [hackathon-competitive-analysis](../hackathon-competitive-analysis/SKILL.md)（prep / テーマ直後）
 - AGENTS.md: [hackathon-agents-md](../hackathon-agents-md/SKILL.md)
 
 ## 追加リソース
