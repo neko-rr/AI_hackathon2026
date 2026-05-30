@@ -4,6 +4,8 @@ import { formatTurbineRecap, turbinesToMap, TURBINE_COUNT } from "./turbinePools
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 const DELIVERY_TITLE = "届いたアイデア";
+const MAX_BODY_LEN = 300;
+const MAX_HEADLINE_LEN = 40;
 
 function normalizeTurbines(turbines) {
   if (Array.isArray(turbines) && turbines.length) {
@@ -23,7 +25,7 @@ function adaptBody(baseBody, turbinesMap) {
   if (diff === "やさしい") {
     body = body.replace(/装置/g, "仕組み").replace(/エネルギー/g, "力");
   } else if (diff === "むずかしい") {
-    body = `${body}（エネルギー変換の観点では、入力の運動エネルギーを回転運動として取り出し、発電機へ伝達します。）`;
+    body = `${body}（もう一歩踏み込むと、背景や理由を押さえると理解が深まります。）`;
   }
 
   const audiencePrefix = {
@@ -35,58 +37,66 @@ function adaptBody(baseBody, turbinesMap) {
 
   const sceneSuffix = {
     会議: " 要点を3つに絞って話すと伝わりやすいです。",
-    学校: " 身近な例え（扇風機や水車）を添えると理解が深まります。",
-    日常: " 身の回りの「回って何かを作る」ものに例えるとイメージしやすいです。",
-    審査: " デモでは「入力→回転→出力」を短く見せるのが効果的です。",
+    学校: " 身近な例えを添えると理解が深まります。",
+    日常: " 身の回りの例に置き換えるとイメージしやすいです。",
+    審査: " 短くまとめて伝えると伝わりやすいです。",
   };
   body = `${body}${sceneSuffix[scene] || ""}`;
 
-  return body.slice(0, 280);
+  return body.slice(0, MAX_BODY_LEN);
 }
 
 function baseAnswersForQuestion(q) {
   const t = q.toLowerCase();
 
+  if (t.includes("猫") && (t.includes("好") || t.includes("かれる"))) {
+    return [
+      {
+        headline: "まずは安全に",
+        body: "無理に触らず、猫のペースに合わせるのが基本です。急接近や大声は避けましょう。",
+      },
+      {
+        headline: "距離の取り方",
+        body: "低い姿勢で、視線を合わせすぎず、おやつやおもちゃで関心を向けてみてください。",
+      },
+    ];
+  }
+
+  if (t.includes("ハッカソン") || t.includes("攻略")) {
+    return [
+      {
+        headline: "時間の使い方",
+        body: "最初に動く最小版（MVP）を決め、見せる体験を最優先にすると成果が出やすいです。",
+      },
+      {
+        headline: "チーム運用",
+        body: "役割を分け、5分迷ったら削る。デモで見せる操作は3分以内に収まるように設計しましょう。",
+      },
+    ];
+  }
+
+  if (t.includes("ご飯") || t.includes("食事") || t.includes("昼") || t.includes("夕")) {
+    return [
+      {
+        headline: "今日のごはん案",
+        body: "バランスを意識するなら、主食・たんぱく質・野菜の3つをそろえると選びやすいです。",
+      },
+      {
+        headline: "手軽な選択",
+        body: "時間がない日は丼ものやスープ付き定食など、一皿でそろうメニューもおすすめです。",
+      },
+    ];
+  }
+
   if (t.includes("タービン") && (t.includes("何") || t.includes("?") || t.includes("？"))) {
     return [
       {
         headline: "タービンとは",
-        body: "水や風、蒸気などの力で羽根が回り、その回転で電気を作る装置です。発電所でよく使われます。",
+        body: "水や風、蒸気などの力で羽根が回り、その回転で電気を作る装置です。",
       },
       {
         headline: "どう動く？",
         body: "流れの力が羽根を回し、回転が発電機につながって電気になります。",
-      },
-      {
-        headline: "身近な例",
-        body: "風力発電の大きな扇風機のような形を想像すると分かりやすいです。",
-      },
-    ];
-  }
-
-  if (t.includes("風力") || (t.includes("風") && t.includes("発電"))) {
-    return [
-      {
-        headline: "風力タービンの答え",
-        body: "風で羽根が回り、発電機とつながって電気を作ります。風の強い場所に建てられます。",
-      },
-    ];
-  }
-
-  if (t.includes("蒸気")) {
-    return [
-      {
-        headline: "蒸気タービンの答え",
-        body: "ボイラーで作った蒸気が羽根を回し、発電機を動かして電気を作ります。火力発電などで使われます。",
-      },
-    ];
-  }
-
-  if (t.includes("水力") || (t.includes("水") && t.includes("発電"))) {
-    return [
-      {
-        headline: "水力タービンの答え",
-        body: "ダムなどの水の流れで羽根が回り、発電機で電気を作ります。",
       },
     ];
   }
@@ -94,11 +104,11 @@ function baseAnswersForQuestion(q) {
   return [
     {
       headline: "ご質問への答え",
-      body: `「${q}」について、タービン（回転してエネルギーを変える仕組み）の視点では、力や流れを別の形に変換することが大切、と考えられます。`,
+      body: `「${q}」について、まずは目的をはっきりさせ、小さく試してから広げていくのが近道です。`,
     },
     {
-      headline: "もう少し詳しく",
-      body: "タービンは「入力（水・風・蒸気）→ 回転 → 出力（電気）」という変換の連鎖で動く装置です。",
+      headline: "次の一歩",
+      body: "気になる点を1つに絞り、今日できることから始めてみてください。",
     },
   ];
 }
@@ -118,7 +128,7 @@ function buildAnswerFallback(input, turbines = []) {
       deliveryItems: [
         {
           headline: "質問を入力してください",
-          body: "例：「タービンって何？」と書いて「仕掛けを動かす」を押すと、流体が3つのタービンを通り、ここに答えが届きます。",
+          body: "例：「猫に好かれる方法」と書いて「仕掛けを動かす」を押すと、流体が3つのタービンを通り、ここに答えが届きます。",
         },
       ],
       fallback: true,
@@ -150,9 +160,9 @@ function normalizePayload(data, input, turbines, skipAdapt = false) {
     .filter((x) => x && (x.headline || x.body))
     .slice(0, 3)
     .map((x) => {
-      const body = String(x.body || "").slice(0, 280);
+      const body = String(x.body || "").slice(0, MAX_BODY_LEN);
       return {
-        headline: String(x.headline || "").slice(0, 40),
+        headline: String(x.headline || "").slice(0, MAX_HEADLINE_LEN),
         body: skipAdapt ? body : adaptBody(body, turbinesMap),
       };
     });
@@ -204,10 +214,11 @@ function delay(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-export const SAMPLES = {
-  question: "タービンって何？",
-  questionWind: "風力発電の仕組みは？",
-};
+export const SAMPLE_QUESTIONS = [
+  { label: "猫に好かれる方法", text: "猫に好かれる方法" },
+  { label: "ハッカソンの攻略方法", text: "ハッカソンの攻略方法" },
+  { label: "今日のご飯", text: "今日のご飯" },
+];
 
 export { TURBINE_COUNT };
 

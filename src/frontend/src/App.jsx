@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   fetchDelivery,
-  SAMPLES,
+  SAMPLE_QUESTIONS,
   isApiConfigured,
 } from "./deliveryApi";
 import { rollTurbineRun } from "./turbinePools";
@@ -10,6 +10,7 @@ import {
   applyTurbineTransform,
 } from "./fluidState";
 import FluidStream, { TurbineSvg } from "./FluidStream";
+import IdeaTank, { TankIcon } from "./IdeaTank";
 
 const STEP_MS = [900, 1100, 1100, 1400];
 const DELIVERY_LABEL = "届いたアイデア";
@@ -31,10 +32,12 @@ export default function App() {
   const [visibleCardCount, setVisibleCardCount] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
   const [lightOn, setLightOn] = useState(false);
-  const [capsuleOut, setCapsuleOut] = useState(false);
   const [turbineAngle, setTurbineAngle] = useState(0);
   const timersRef = useRef([]);
   const deliveryRef = useRef(null);
+  const resultRef = useRef(null);
+  const animationDoneRef = useRef(false);
+  const [awaitingIdeas, setAwaitingIdeas] = useState(false);
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -60,7 +63,7 @@ export default function App() {
   }, [chainStep]);
 
   useEffect(() => {
-    if (!showDelivery || !result?.deliveryItems?.length) return undefined;
+    if (!showDelivery || awaitingIdeas || !result?.deliveryItems?.length) return undefined;
 
     setVisibleCardCount(0);
     const scrollTimer = setTimeout(() => {
@@ -75,7 +78,17 @@ export default function App() {
       clearTimeout(scrollTimer);
       cardTimers.forEach(clearTimeout);
     };
-  }, [showDelivery, result]);
+  }, [showDelivery, awaitingIdeas, result]);
+
+  const finishWhenReady = useCallback((data) => {
+    resultRef.current = data;
+    setResult(data);
+    setAwaitingIdeas(false);
+    setStatusMessage("質問への答えを届けました！");
+    if (animationDoneRef.current) {
+      setBusy(false);
+    }
+  }, []);
 
   const resetShow = () => {
     clearTimers();
@@ -93,8 +106,10 @@ export default function App() {
     setVisibleCardCount(0);
     setStatusMessage("");
     setLightOn(false);
-    setCapsuleOut(false);
     setBusy(false);
+    setAwaitingIdeas(false);
+    resultRef.current = null;
+    animationDoneRef.current = false;
   };
 
   const runChain = async () => {
@@ -118,12 +133,16 @@ export default function App() {
       `${rolled.fluidMeta.label}に変えています…（${rolled.fluidMeta.flowLabel}）`
     );
 
+    resultRef.current = null;
+    animationDoneRef.current = false;
+    setAwaitingIdeas(false);
+
     const apiPromise = fetchDelivery(text, {
       turbines: rolled.turbines,
       fluidType: rolled.fluidType,
       fluidMeta: rolled.fluidMeta,
     });
-    apiPromise.then((data) => setResult(data)).catch(() => {});
+    apiPromise.then(finishWhenReady).catch(() => {});
 
     let delayAcc = STEP_MS[0];
 
@@ -133,7 +152,9 @@ export default function App() {
           setChainStep(i + 1);
           setPassIndex(i + 1);
           setHighlightOrder(t.passageOrder);
-          setStatusMessage(`${t.label}：${t.value} — 流体が変わりました`);
+          if (!isApiConfigured()) {
+            setStatusMessage(`${t.label}：${t.value} — 流体が変わりました`);
+          }
           fluid = applyTurbineTransform(fluid, t.id, t.value);
           setFluidState({ ...fluid });
         }, delayAcc)
@@ -142,24 +163,38 @@ export default function App() {
     });
 
     timersRef.current.push(
-      setTimeout(async () => {
-        try {
-          const data = await apiPromise;
-          setResult(data);
-        } catch {
-          /* 内部フォールバック */
-        }
+      setTimeout(() => {
+        animationDoneRef.current = true;
         setHighlightOrder(-1);
         setPassIndex(rolled.passSteps.length - 1);
         setLightOn(true);
-        setCapsuleOut(true);
         setChainStep(4);
-        setStatusMessage("質問への答えを届けました！");
         setShowDelivery(true);
-        setBusy(false);
+
+        if (resultRef.current) {
+          setStatusMessage("質問への答えを届けました！");
+          setBusy(false);
+        } else {
+          setAwaitingIdeas(true);
+          setStatusMessage(
+            isApiConfigured()
+              ? "アイデアが溜まり待ち中…"
+              : "答えをまとめています…"
+          );
+        }
       }, delayAcc)
     );
   };
+
+  const displayedStatus = (() => {
+    if (awaitingIdeas && isApiConfigured()) {
+      return "アイデアが溜まり待ち中…";
+    }
+    if (busy && isApiConfigured() && chainStep >= 1 && !awaitingIdeas) {
+      return "AI が答えを届けています…";
+    }
+    return statusMessage;
+  })();
 
   const renderTurbine = (t, isHighlight, glowing) => (
     <TurbineSvg
@@ -169,6 +204,19 @@ export default function App() {
       glowing={glowing}
     />
   );
+
+  const tankFill = (() => {
+    if (showDelivery && result && !awaitingIdeas) return 100;
+    if (awaitingIdeas) return 94;
+    if (!busy) return 6;
+    if (passIndex <= 0) return 18;
+    if (passIndex === 1) return 42;
+    if (passIndex === 2) return 68;
+    if (passIndex >= 3) return 88;
+    return 6;
+  })();
+
+  const tankIconFill = showDelivery && result && !awaitingIdeas ? 100 : Math.max(24, tankFill);
 
   return (
     <div className="app">
@@ -195,28 +243,23 @@ export default function App() {
           className="input-field"
           type="text"
           value={text}
-          placeholder="例：タービンって何？ / 風力発電の仕組みは？"
+          placeholder="例：猫に好かれる方法 / 今日のご飯"
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !busy && runChain()}
           disabled={busy}
         />
         <div className="sample-row">
-          <button
-            type="button"
-            className="button-sample"
-            disabled={busy}
-            onClick={() => setText(SAMPLES.question)}
-          >
-            お試し：タービンって何？
-          </button>
-          <button
-            type="button"
-            className="button-sample"
-            disabled={busy}
-            onClick={() => setText(SAMPLES.questionWind)}
-          >
-            お試し：風力発電
-          </button>
+          {SAMPLE_QUESTIONS.map((sample) => (
+            <button
+              key={sample.text}
+              type="button"
+              className="button-sample"
+              disabled={busy}
+              onClick={() => setText(sample.text)}
+            >
+              お試し：{sample.label}
+            </button>
+          ))}
         </div>
         <button
           type="button"
@@ -228,9 +271,9 @@ export default function App() {
         </button>
       </section>
 
-      {statusMessage && (
+      {displayedStatus && (
         <p className="status-banner" role="status">
-          {statusMessage}
+          {displayedStatus}
         </p>
       )}
 
@@ -249,37 +292,33 @@ export default function App() {
           onTurbineRender={renderTurbine}
         />
 
+        <IdeaTank
+          fluidState={fluidState || createFluidFromQuestion(text, fluidType)}
+          fluidType={fluidType}
+          fillPercent={tankFill}
+          flowing={busy || awaitingIdeas}
+          received={showDelivery && !awaitingIdeas}
+          label={fluidState?.label || text}
+        />
+
         <div
-          className="delivery-rail-wrap"
+          ref={deliveryRef}
+          id="delivery-box"
+          className={`delivery-box ${showDelivery ? "received" : ""} ${busy || awaitingIdeas ? "waiting" : ""}`}
           style={
             fluidState?.hue != null
               ? { "--delivery-hue": String(Math.round(fluidState.hue)) }
               : undefined
           }
-        >
-          <div className="delivery-rail">
-            <span className="tube-label">配達口</span>
-            <div className="tube" />
-            <div className={`capsule ${capsuleOut ? "out" : ""}`}>📦</div>
-            <div className={`bulb ${lightOn ? "on" : ""}`} aria-hidden />
-            <div
-              className={`flow-arrow ${capsuleOut ? "flow" : ""} ${fluidType === "steam" ? "arrow-up" : ""}`}
-            >
-              {fluidType === "steam" ? "▲" : "▼"}
-            </div>
-          </div>
-        </div>
-
-        <div
-          ref={deliveryRef}
-          id="delivery-box"
-          className={`delivery-box ${showDelivery ? "received" : ""} ${busy ? "waiting" : ""}`}
           aria-label={DELIVERY_LABEL}
         >
           <div className="delivery-box-header">
-            <span className="delivery-icon" aria-hidden>
-              📬
-            </span>
+            <TankIcon
+              fluidState={fluidState || createFluidFromQuestion(text, fluidType)}
+              fillPercent={tankIconFill}
+              active={showDelivery && !awaitingIdeas}
+              steam={fluidType === "steam"}
+            />
             <h2 className="delivery-box-title">{DELIVERY_LABEL}</h2>
           </div>
 
@@ -287,15 +326,21 @@ export default function App() {
             <p className="delivery-placeholder">
               質問を入力して「仕掛けを動かす」と、
               <br />
-              <strong>ここに条件付きの答え</strong>が自動で届きます
+              <strong>タンクに流体が溜まり、ここに答え</strong>が届きます
             </p>
           )}
 
           {busy && !showDelivery && (
-            <p className="delivery-placeholder pulse">流体がタービンを通過中…</p>
+            <p className="delivery-placeholder pulse">流体がタンクに流れ込んでいます…</p>
           )}
 
-          {showDelivery && result && (
+          {showDelivery && awaitingIdeas && (
+            <p className="delivery-placeholder delivery-queue pulse">
+              アイデアが溜まり待ち中…
+            </p>
+          )}
+
+          {showDelivery && result && !awaitingIdeas && (
             <div className="delivery-content">
               {fluidMeta && (
                 <p className="fluid-recap">
@@ -335,6 +380,16 @@ export default function App() {
                   </li>
                 ))}
               </ul>
+              <div className="redeliver-row">
+                <button
+                  type="button"
+                  className="button-redeliver"
+                  onClick={runChain}
+                >
+                  もう一度届ける
+                </button>
+                <p className="redeliver-hint">タービンは毎回バラバラ。もう一度試してみてください。</p>
+              </div>
             </div>
           )}
         </div>

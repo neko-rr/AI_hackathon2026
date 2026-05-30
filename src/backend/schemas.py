@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 MAX_TEXT_LEN = 500
+MAX_BODY_LEN = 300
+MAX_HEADLINE_LEN = 40
+MAX_DELIVERY_ITEMS = 3
 DELIVERY_TITLE = "届いたアイデア"
 
 TURBINE_KEYS = ("difficulty", "audience", "scene")
@@ -56,11 +59,11 @@ def clean_delivery_items(items: list | None) -> list[dict[str, str]]:
     if not isinstance(items, list):
         return []
     cleaned: list[dict[str, str]] = []
-    for item in items[:3]:
+    for item in items[:MAX_DELIVERY_ITEMS]:
         if not isinstance(item, dict):
             continue
-        headline = str(item.get("headline") or "").strip()[:40]
-        body = str(item.get("body") or "").strip()[:280]
+        headline = str(item.get("headline") or "").strip()[:MAX_HEADLINE_LEN]
+        body = str(item.get("body") or "").strip()[:MAX_BODY_LEN]
         if headline or body:
             cleaned.append({"headline": headline, "body": body})
     return cleaned

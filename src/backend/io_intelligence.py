@@ -63,7 +63,7 @@ def chat_completion(
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0.5,
-        "max_completion_tokens": 800,
+        "max_completion_tokens": 1200,
     }
 
     data = json.dumps(payload).encode("utf-8")

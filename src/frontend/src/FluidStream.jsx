@@ -40,6 +40,8 @@ export default function FluidStream({
   const flowClass = isSteam ? "fluid--steam" : "fluid--liquid";
   const targetProgress = step.progress ?? 0;
   const flowSpeed = fluidState?.speed ?? 1;
+  const passLevel = passIndex > 0 ? Math.min(passIndex, turbines.length) : 0;
+  const isPassFlash = highlightOrder >= 0;
 
   useEffect(() => {
     if (!active || !routePath || !stageRef.current) return undefined;
@@ -105,8 +107,8 @@ export default function FluidStream({
   return (
     <div
       ref={stageRef}
-      className={`fluid-stage ${flowClass} ${active ? "on flowing" : ""}`}
-      style={cssVars}
+      className={`fluid-stage ${flowClass} ${active ? "on flowing" : ""} fluid-stage--pass-${passLevel}`}
+      style={{ ...cssVars, "--pass-level": passLevel }}
       aria-hidden={!active}
     >
       <div className="fluid-type-badge">
@@ -143,7 +145,10 @@ export default function FluidStream({
       </svg>
 
       <div className="scatter-field-wrap">
-        <div className="scatter-field">
+        <div
+          className={`scatter-field scatter-field--pass-${passLevel}${isPassFlash ? " scatter-field--flash" : ""}`}
+          style={{ "--pass-level": passLevel }}
+        >
           <svg
             className="river-waves-svg"
             viewBox="0 0 100 100"
