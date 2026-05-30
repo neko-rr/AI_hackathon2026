@@ -19,8 +19,10 @@
 | 日時 | **2026年5月30日（土）** |
 | ブロック | **A**（10:15 集合） |
 | 会場 | TKPガーデンシティ大阪梅田 |
-| 開発 | 10:30〜13:30（3時間） |
+| 開発 | **10:30〜13:30**（3時間） |
+| テーマ | **タービン**（Aブロック / 2026-05-30 告知） |
 | 審査 | 13:30〜（審査員が Chrome で操作・3分/チーム） |
+| 審査員 | **IT素人** — 専門用語なし・直感的な UI が必須 |
 
 当日タスク → [docs/tasks.md](docs/tasks.md)  
 審査デモ確認 → [docs/demo-script.md](docs/demo-script.md)
@@ -78,6 +80,7 @@ PowerShell（プロジェクトルートから）:
 | `docs/` | 要約・tasks・demo-script |
 | `assets/` | 画像等 |
 | `notes/` | 調査メモ |
+| `notes/competitive/` | 競合分析レポート |
 | `.cursor/skills/` | Cursor Agent Skills（ハッカソン用） |
 | `AGENTS.md` | AI エージェント向け指示書 |
 
@@ -89,7 +92,7 @@ PowerShell（プロジェクトルートから）:
 | [docs/zenkoku-ai-hackathon-2026-regulation-summary.md](docs/zenkoku-ai-hackathon-2026-regulation-summary.md) | レギュレーション要約 |
 | [docs/541e41_4d0b0cf38e33481e95ba992d25d2ac5d.pdf](docs/541e41_4d0b0cf38e33481e95ba992d25d2ac5d.pdf) | レギュレーション原文（[公式URL](https://85f0713d-c3eb-4af4-873c-6f22c38c681b.filesusr.com/ugd/541e41_4d0b0cf38e33481e95ba992d25d2ac5d.pdf)） |
 | [docs/ideas/](docs/ideas/) | アイデア候補・比較 |
-| [docs/idea.md](docs/idea.md) | 採用アイデア（**未決定**） |
+| [docs/idea.md](docs/idea.md) | 採用アイデア（テーマ確定・**案未決定**） |
 | [docs/tasks.md](docs/tasks.md) | 当日タスク・役割分担 |
 | [docs/demo-script.md](docs/demo-script.md) | 審査用デモ確認 |
 | [docs/infrastructure-aws.md](docs/infrastructure-aws.md) | AWS 構成（予定） |
@@ -103,6 +106,7 @@ PowerShell（プロジェクトルートから）:
 | Skill | 用途 |
 |-------|------|
 | `hackathon-ideation` | アイデア出し |
+| `hackathon-competitive-analysis` | 競合分析（Web 検索・差別化） |
 | `hackathon-design-md` | UI デザインシステム（[Google design.md](https://github.com/google-labs-code/design.md)） |
 | `hackathon-tasks-plan` / `hackathon-tasks-sync` | タスク計画・進捗更新 |
 | `hackathon-bedrock` | Bedrock / Lambda パターン |
