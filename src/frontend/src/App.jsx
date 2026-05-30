@@ -4,7 +4,7 @@ import {
   SAMPLE_QUESTIONS,
   isApiConfigured,
 } from "./deliveryApi";
-import { rollTurbineRun } from "./turbinePools";
+import { rollTurbineRun, applyQuestionSceneToTurbines } from "./turbinePools";
 import {
   createFluidFromQuestion,
   applyTurbineTransform,
@@ -118,11 +118,12 @@ export default function App() {
     setBusy(true);
 
     const rolled = rollTurbineRun();
+    const runTurbines = applyQuestionSceneToTurbines(rolled.turbines, text);
     setFluidType(rolled.fluidType);
     setFluidMeta(rolled.fluidMeta);
     setPassSteps(rolled.passSteps);
     setRoutePath(rolled.routePath);
-    setTurbines(rolled.turbines);
+    setTurbines(runTurbines);
 
     let fluid = createFluidFromQuestion(text, rolled.fluidType);
     setFluidState(fluid);
@@ -138,7 +139,7 @@ export default function App() {
     setAwaitingIdeas(false);
 
     const apiPromise = fetchDelivery(text, {
-      turbines: rolled.turbines,
+      turbines: runTurbines,
       fluidType: rolled.fluidType,
       fluidMeta: rolled.fluidMeta,
     });
@@ -146,7 +147,7 @@ export default function App() {
 
     let delayAcc = STEP_MS[0];
 
-    rolled.turbines.forEach((t, i) => {
+    runTurbines.forEach((t, i) => {
       timersRef.current.push(
         setTimeout(() => {
           setChainStep(i + 1);

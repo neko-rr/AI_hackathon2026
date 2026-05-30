@@ -4,33 +4,83 @@ from __future__ import annotations
 
 from schemas import DELIVERY_TITLE, format_turbine_recap
 
+MIN_BODY_LEN = 100
+
+
+def _normalize_ending(text: str) -> str:
+    body = (text or "").strip()
+    body = body.replace("ですか？", "です。").replace("ですか?", "です。")
+    body = body.replace("でしょうか？", "です。").replace("でしょうか?", "です。")
+    body = body.replace("ますか？", "ます。").replace("ますか?", "ます。")
+    if body and not body.endswith(("。", "！", "!", ".")):
+        body += "。"
+    return body
+
+
+def _remove_condition_words(text: str) -> str:
+    body = text or ""
+    body = body.replace("自分向けには：", "")
+    body = body.replace("相手向けには：", "")
+    body = body.replace("みんな向けには：", "")
+    body = body.replace("自分が理解するには：", "")
+    body = body.replace("相手に説明するときは：", "")
+    body = body.replace("みんなに伝えるなら：", "")
+    return " ".join(body.split())
+
+
+def _proposal_expansion() -> str:
+    return (
+        "まず試す範囲を一つに絞って、最初の手順を具体的に実行してください。"
+        "次に判断基準を一つ決めて候補を比較し、選んだ理由を短く記録してください。"
+        "最後に結果を見て改善点を一つだけ追加し、次回の行動に反映してください。"
+    )
+
+
+def _split_sentences(text: str) -> list[str]:
+    src = (text or "").strip()
+    if not src:
+        return []
+    chunks: list[str] = []
+    buf = ""
+    for ch in src:
+        buf += ch
+        if ch in "。.!！?？":
+            chunks.append(buf.strip())
+            buf = ""
+    if buf.strip():
+        chunks.append(buf.strip())
+    return chunks
+
+
+def _force_proposal_after_first(text: str) -> str:
+    chunks = _split_sentences(_remove_condition_words(_normalize_ending(text)))
+    first = _normalize_ending(chunks[0] if chunks else text)
+    return f"{first} {_proposal_expansion()}".strip()
+
+
+def _ensure_min_length(text: str) -> str:
+    body = _force_proposal_after_first(text)
+    if not body:
+        body = (
+            "最初に目的を一文で決めてください。"
+            "まず試す範囲を一つに絞って、最初の手順を具体的に実行してください。"
+            "次に判断基準を一つ決めて候補を比較し、選んだ理由を短く記録してください。"
+        )
+    expansion = _proposal_expansion()
+    while len(body) < MIN_BODY_LEN:
+        body = f"{body} {expansion}".strip()
+    return body[:300]
+
 
 def adapt_body(base_body: str, turbines: dict[str, str]) -> str:
     diff = turbines.get("difficulty", "ふつう")
-    aud = turbines.get("audience", "みんな")
-    scene = turbines.get("scene", "日常")
 
     body = base_body
     if diff == "やさしい":
         body = body.replace("装置", "仕組み").replace("エネルギー", "力")
     elif diff == "むずかしい":
-        body = f"{body}（もう一歩踏み込むと、背景や理由を押さえると理解が深まります。）"
-
-    audience_prefix = {
-        "自分": "自分が理解するには：",
-        "相手": "相手に説明するときは：",
-        "みんな": "みんなに伝えるなら：",
-    }
-    body = f"{audience_prefix.get(aud, '')}{body}"
-
-    scene_suffix = {
-        "会議": " 要点を3つに絞って話すと伝わりやすいです。",
-        "学校": " 身近な例えを添えると理解が深まります。",
-        "日常": " 身の回りの例に置き換えるとイメージしやすいです。",
-        "審査": " 短くまとめて伝えると伝わりやすいです。",
-    }
-    body = f"{body}{scene_suffix.get(scene, '')}"
-    return body[:300]
+        body = f"{body} 理由を一つ添えて選択肢を比較すると、判断の精度が上がります。"
+    return _ensure_min_length(body)
 
 
 def base_answers_for_question(q: str) -> list[dict[str, str]]:
@@ -87,11 +137,11 @@ def base_answers_for_question(q: str) -> list[dict[str, str]]:
     return [
         {
             "headline": "ご質問への答え",
-            "body": f"「{q}」について、まずは目的をはっきりさせ、小さく試してから広げていくのが近道です。",
+            "body": "目的を一文で明確にし、最小の手順で一度試してから広げると、失敗を抑えながら成果を出しやすくなります。",
         },
         {
             "headline": "次の一歩",
-            "body": "気になる点を1つに絞り、今日できることから始めてみてください。",
+            "body": "気になる点を一つ選び、今日中に試して結果を記録してください。次回は記録を見て改善点を一つだけ追加すると継続しやすくなります。",
         },
     ]
 

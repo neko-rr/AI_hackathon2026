@@ -6,6 +6,13 @@ export const TURBINE_AXES = [
   { id: "scene", label: "場面", pool: ["会議", "学校", "日常", "審査"] },
 ];
 
+const SCENE_CANDIDATES = [
+  { scene: "会議", keywords: ["会議", "打合せ", "打ち合わせ", "ミーティング", "商談"] },
+  { scene: "学校", keywords: ["学校", "授業", "教室", "学生", "先生"] },
+  { scene: "審査", keywords: ["審査", "評価", "ジャッジ", "judge", "審査員"] },
+  { scene: "日常", keywords: ["日常", "普段", "ふだん", "生活", "毎日"] },
+];
+
 export const TURBINE_COUNT = TURBINE_AXES.length;
 
 export const FLUID_TYPES = {
@@ -21,6 +28,32 @@ const Y_MAX = 82;
 
 function pickValue(pool) {
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/** 質問文に場面語があれば抽出（最初に出る語を優先） */
+export function extractSceneFromQuestion(question) {
+  const q = String(question || "").trim();
+  if (!q) return "";
+
+  let best = null;
+  SCENE_CANDIDATES.forEach(({ scene, keywords }) => {
+    keywords.forEach((kw) => {
+      const idx = q.indexOf(kw);
+      if (idx < 0) return;
+      if (!best || idx < best.index) {
+        best = { scene, index: idx };
+      }
+    });
+  });
+  return best?.scene || "";
+}
+
+/** 質問で場面が指定されていればタービン場面を上書き */
+export function applyQuestionSceneToTurbines(turbines, question) {
+  if (!Array.isArray(turbines) || !turbines.length) return turbines || [];
+  const scene = extractSceneFromQuestion(question);
+  if (!scene) return turbines;
+  return turbines.map((t) => (t.id === "scene" ? { ...t, value: scene } : t));
 }
 
 /** ステージ上に重ならないランダム座標（%） */

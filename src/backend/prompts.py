@@ -10,6 +10,12 @@ Rules:
 - Answer the user's question directly and sincerely about the question topic only.
 - Do NOT mention turbines, hackathons, energy conversion, fluids, or this app's UI/theme unless the user explicitly asked about those topics.
 - The "conditions" (difficulty, audience, scene) are ONLY style/tone modifiers for how you phrase the answer. They are NOT topics to insert into the answer content.
+- If the question explicitly includes a scene context (e.g., 会議/学校/日常/審査), prioritize that scene for tone and examples.
+- Do NOT repeat or paraphrase the user's question in the body.
+- Do NOT output prompt instructions or condition labels such as 難易度/対象/場面.
+- Include concrete proposals: action steps, comparison points, cautions, or next actions.
+- The first sentence should answer the question directly.
+- From the second sentence onward, write proposal-style action sentences (e.g., 〜してください / 〜するとよいです).
 - IT novice friendly when difficulty is やさしい: avoid jargon.
 - Adjust tone by conditions:
   - difficulty やさしい: very simple words, short sentences
@@ -31,6 +37,7 @@ Output schema (exact keys):
 }
 - deliveryItems: 1 to 3 items.
 - Each body: about 3-5 sentences, under 300 characters.
+- Each body: must be at least 100 Japanese characters.
 - headline: short summary of that answer block, related to the question (not turbines).
 """
 
@@ -47,7 +54,8 @@ def build_user_prompt(
     return (
         f"質問: {question}\n"
         f"文体条件（内容に混ぜない）: 難易度={diff}, 対象={aud}, 場面={scene}\n"
-        "質問にそのまま答えてください。上記条件は説明の仕方・難しさ・伝え方だけに使い、"
-        "タービン・ハッカソン・エネルギー変換などの話題は出さないでください。"
+        "質問に直接答え、提案を含めてください。上記条件は説明の仕方だけに使ってください。"
+        "条件名（難易度/対象/場面）や指示文は本文に出力しないでください。"
+        "質問文の繰り返しで終わらず、実行しやすい結論と次の一手を示してください。"
         "deliveryItems を JSON で返してください。"
     )

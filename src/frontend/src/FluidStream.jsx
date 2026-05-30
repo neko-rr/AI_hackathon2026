@@ -1,13 +1,19 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { fluidStateToCssVars } from "./fluidState";
 import {
   createPathSampler,
-  easeOutCubic,
   sampleTrail,
   applyTrailToElement,
 } from "./fluidPathMotion";
 
-const SEGMENT_MS_BASE = 1050;
+const BASE_VELOCITY = 36;
+const LIQUID_GRAVITY = 26;
+const STEAM_BUOYANCY = 30;
+const STEAM_DIFFUSION = 2.8;
+const V_MIN = 10;
+const V_MAX = 115;
+const EMIT_DURATION_MS = 620;
+const RAND_SEED = 2147483647;
 
 function chipIsOn(t, passIndex, passSteps) {
   if (passIndex <= 0) return false;
@@ -31,6 +37,8 @@ export default function FluidStream({
   const stageRef = useRef(null);
   const progressRef = useRef(0);
   const animFrameRef = useRef(null);
+  const velocityRef = useRef(BASE_VELOCITY);
+  const [splashParticles, setSplashParticles] = useState([]);
 
   const cssVars = fluidStateToCssVars(fluidState);
   const idx = Math.min(Math.max(passIndex, 0), Math.max(passSteps.length - 1, 0));
@@ -42,14 +50,14 @@ export default function FluidStream({
   const flowSpeed = fluidState?.speed ?? 1;
   const passLevel = passIndex > 0 ? Math.min(passIndex, turbines.length) : 0;
   const isPassFlash = highlightOrder >= 0;
+  const sampler = useMemo(() => createPathSampler(routePath), [routePath]);
 
   useEffect(() => {
-    if (!active || !routePath || !stageRef.current) return undefined;
-
-    const sampler = createPathSampler(routePath);
+    if (!active || !sampler || !stageRef.current) return undefined;
     const fromProgress = progressRef.current;
     const toProgress = targetProgress;
-    const duration = SEGMENT_MS_BASE / flowSpeed;
+    const direction = toProgress >= fromProgress ? 1 : -1;
+    const speedMultiplier = Math.max(0.55, flowSpeed);
 
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
@@ -63,20 +71,37 @@ export default function FluidStream({
       return undefined;
     }
 
-    const startTime = performance.now();
+    let last = performance.now();
+    let p = fromProgress;
+    let v = velocityRef.current || BASE_VELOCITY * speedMultiplier;
 
     const tick = (now) => {
-      const elapsed = now - startTime;
-      const u = easeOutCubic(Math.min(1, elapsed / duration));
-      const current = fromProgress + (toProgress - fromProgress) * u;
-      progressRef.current = current;
+      const dt = Math.min(0.033, (now - last) / 1000);
+      last = now;
+
+      const probe = sampler.at(p / 100);
+      const dy = probe.tangentY;
+      let accel;
+      if (isSteam) {
+        accel = (-STEAM_BUOYANCY * dy + STEAM_DIFFUSION * (Math.random() - 0.5)) * speedMultiplier;
+      } else {
+        accel = LIQUID_GRAVITY * dy * speedMultiplier;
+      }
+
+      v = Math.min(V_MAX, Math.max(V_MIN, v + accel * dt));
+      p += direction * v * dt;
+
+      const done = direction > 0 ? p >= toProgress : p <= toProgress;
+      const current = done ? toProgress : p;
       const trail = sampleTrail(sampler, current / 100);
       applyTrailToElement(stageRef.current, trail, current);
+      progressRef.current = current;
 
-      if (u < 1) {
+      if (!done) {
         animFrameRef.current = requestAnimationFrame(tick);
       } else {
         progressRef.current = toProgress;
+        velocityRef.current = v;
         animFrameRef.current = null;
       }
     };
@@ -89,11 +114,12 @@ export default function FluidStream({
         animFrameRef.current = null;
       }
     };
-  }, [active, routePath, passIndex, targetProgress, flowSpeed]);
+  }, [active, sampler, passIndex, targetProgress, flowSpeed, isSteam]);
 
   useEffect(() => {
     if (!active) {
       progressRef.current = 0;
+      velocityRef.current = BASE_VELOCITY;
       if (stageRef.current) {
         applyTrailToElement(
           stageRef.current,
@@ -103,6 +129,43 @@ export default function FluidStream({
       }
     }
   }, [active]);
+
+  useEffect(() => {
+    if (!sampler || highlightOrder < 0) {
+      setSplashParticles([]);
+      return undefined;
+    }
+
+    const turbine = turbines.find((t) => t.passageOrder === highlightOrder);
+    const stepForTurbine = passSteps.find((s) => s.turbineIndex === highlightOrder);
+    if (!turbine || !stepForTurbine) return undefined;
+
+    const sample = sampler.at((stepForTurbine.progress ?? 0) / 100);
+    const seedBase = (highlightOrder + 3) * 991;
+    const count = isSteam ? 10 : 14;
+    const created = Array.from({ length: count }, (_, i) => {
+      const phase = (seedBase * (i + 1) * 48271) % RAND_SEED;
+      const randA = (phase % 1000) / 1000;
+      const randB = ((phase / 1000) % 1000) / 1000;
+      const spread = (randA - 0.5) * (isSteam ? 6 : 9);
+      const forward = 6 + randB * (isSteam ? 4 : 7);
+      const gravity = isSteam ? -7 - randA * 5 : 9 + randA * 6;
+      return {
+        id: `${highlightOrder}-${i}`,
+        x: turbine.xPercent,
+        y: turbine.yPercent,
+        dx: sample.tangentX * forward + spread,
+        dy: sample.tangentY * forward + gravity,
+        size: isSteam ? 4 + randB * 6 : 3 + randB * 4,
+        life: 320 + randA * 260,
+        delay: randB * 80,
+      };
+    });
+
+    setSplashParticles(created);
+    const timer = setTimeout(() => setSplashParticles([]), EMIT_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [highlightOrder, isSteam, sampler, turbines, passSteps]);
 
   return (
     <div
@@ -171,6 +234,14 @@ export default function FluidStream({
                   : "M0,88 Q30,96 60,88 T100,88 L100,100 L0,100 Z"
               }
             />
+            <path
+              className="river-wave river-wave--3"
+              d={
+                isSteam
+                  ? "M0,18 Q20,8 44,18 T88,18 T100,18 L100,0 L0,0 Z"
+                  : "M0,82 Q20,92 44,82 T88,82 T100,82 L100,100 L0,100 Z"
+              }
+            />
           </svg>
 
           {routePath && (
@@ -202,6 +273,23 @@ export default function FluidStream({
               <span className="fluid-label">{label}</span>
             </div>
           </div>
+
+          {splashParticles.map((p) => (
+            <span
+              key={p.id}
+              className={`spray-particle ${isSteam ? "mist" : "water"}`}
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                "--spray-dx": `${p.dx}%`,
+                "--spray-dy": `${p.dy}%`,
+                "--spray-size": `${p.size}px`,
+                "--spray-life": `${p.life}ms`,
+                "--spray-delay": `${p.delay}ms`,
+              }}
+              aria-hidden
+            />
+          ))}
 
           {turbines.map((t) => {
             const currentOrder = step.turbineIndex ?? -1;

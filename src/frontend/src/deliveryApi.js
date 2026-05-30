@@ -1,11 +1,17 @@
 // 意外発送タービン — 質問を流体→タービン→条件付き回答
 
-import { formatTurbineRecap, turbinesToMap, TURBINE_COUNT } from "./turbinePools";
+import {
+  formatTurbineRecap,
+  turbinesToMap,
+  TURBINE_COUNT,
+  applyQuestionSceneToTurbines,
+} from "./turbinePools";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 const DELIVERY_TITLE = "届いたアイデア";
 const MAX_BODY_LEN = 300;
 const MAX_HEADLINE_LEN = 40;
+const MIN_BODY_LEN = 100;
 
 function normalizeTurbines(turbines) {
   if (Array.isArray(turbines) && turbines.length) {
@@ -17,32 +23,74 @@ function normalizeTurbines(turbines) {
 /** 3軸に応じて本文を修飾 */
 function adaptBody(baseBody, turbinesMap) {
   const diff = turbinesMap.difficulty || "ふつう";
-  const aud = turbinesMap.audience || "みんな";
-  const scene = turbinesMap.scene || "日常";
-
   let body = baseBody;
 
   if (diff === "やさしい") {
     body = body.replace(/装置/g, "仕組み").replace(/エネルギー/g, "力");
   } else if (diff === "むずかしい") {
-    body = `${body}（もう一歩踏み込むと、背景や理由を押さえると理解が深まります。）`;
+    body = `${body} 可能なら理由を1つ添えて比較すると、判断の精度が上がります。`;
   }
 
-  const audiencePrefix = {
-    自分: "自分が理解するには：",
-    相手: "相手に説明するときは：",
-    みんな: "みんなに伝えるなら：",
-  };
-  body = `${audiencePrefix[aud] || ""}${body}`;
+  body = removePromptConditionWords(body);
 
-  const sceneSuffix = {
-    会議: " 要点を3つに絞って話すと伝わりやすいです。",
-    学校: " 身近な例えを添えると理解が深まります。",
-    日常: " 身の回りの例に置き換えるとイメージしやすいです。",
-    審査: " 短くまとめて伝えると伝わりやすいです。",
-  };
-  body = `${body}${sceneSuffix[scene] || ""}`;
+  return ensureMinBodyLength(body, turbinesMap);
+}
 
+function normalizeEnding(text) {
+  let normalized = String(text || "").trim();
+  if (!normalized) return "";
+  normalized = normalized
+    .replace(/(ですか|でしょうか)[？?]?\s*$/g, "です。")
+    .replace(/(ますか)[？?]?\s*$/g, "ます。");
+  if (!/[。.!！]$/.test(normalized)) {
+    normalized += "。";
+  }
+  return normalized;
+}
+
+function removePromptConditionWords(text) {
+  if (!text) return "";
+  return String(text)
+    .replace(/(難易度|対象|場面)\s*[：:]\s*\S+/g, "")
+    .replace(/(自分向け|相手向け|みんな向け)(には)?[:：]?/g, "")
+    .replace(/(会議では|学校では|日常では|審査では)/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function buildProposalExpansion() {
+  return [
+    "まず試す範囲を一つに絞って、最初の手順を具体的に実行してください。",
+    "次に判断基準を一つ決めて候補を比較し、選んだ理由を短く記録してください。",
+    "最後に結果を見て改善点を一つだけ追加し、次回の行動に反映してください。",
+  ];
+}
+
+function splitSentences(text) {
+  const src = String(text || "").trim();
+  if (!src) return [];
+  return src.match(/[^。.!！?？]+[。.!！?？]?/g) || [];
+}
+
+function forceProposalAfterFirst(text) {
+  const sentences = splitSentences(removePromptConditionWords(normalizeEnding(text)));
+  const first = normalizeEnding(sentences[0] || text || "");
+  const proposals = buildProposalExpansion();
+  const combined = [first, ...proposals].join(" ");
+  return combined;
+}
+
+function ensureMinBodyLength(baseBody, turbinesMap) {
+  let body = forceProposalAfterFirst(baseBody);
+  if (!body) {
+    body =
+      "最初に目的を一文で決めてください。まず試す範囲を一つに絞って、最初の手順を具体的に実行してください。次に判断基準を一つ決めて候補を比較し、選んだ理由を短く記録してください。";
+  }
+
+  const expansion = buildProposalExpansion(turbinesMap).join(" ");
+  while (body.length < MIN_BODY_LEN) {
+    body = `${body} ${expansion}`.trim();
+  }
   return body.slice(0, MAX_BODY_LEN);
 }
 
@@ -104,11 +152,11 @@ function baseAnswersForQuestion(q) {
   return [
     {
       headline: "ご質問への答え",
-      body: `「${q}」について、まずは目的をはっきりさせ、小さく試してから広げていくのが近道です。`,
+      body: "目的を一文で明確にし、最小の手順でまず一回試すことが近道です。結果を見て、効果が高い部分だけを残して広げると失敗を減らせます。",
     },
     {
       headline: "次の一歩",
-      body: "気になる点を1つに絞り、今日できることから始めてみてください。",
+      body: "気になる点を一つに絞って今日中に試し、良かった点と改善点をメモして次回に反映してください。小さな改善を繰り返すほど成果が安定します。",
     },
   ];
 }
@@ -163,7 +211,9 @@ function normalizePayload(data, input, turbines, skipAdapt = false) {
       const body = String(x.body || "").slice(0, MAX_BODY_LEN);
       return {
         headline: String(x.headline || "").slice(0, MAX_HEADLINE_LEN),
-        body: skipAdapt ? body : adaptBody(body, turbinesMap),
+        body: skipAdapt
+          ? ensureMinBodyLength(body, turbinesMap)
+          : adaptBody(body, turbinesMap),
       };
     });
 
@@ -181,9 +231,10 @@ function normalizePayload(data, input, turbines, skipAdapt = false) {
 export async function fetchDelivery(text, context = {}) {
   const input = (text || "").trim();
   const normalizedTurbines = normalizeTurbines(context.turbines);
+  const effectiveTurbines = applyQuestionSceneToTurbines(normalizedTurbines, input);
   const fluidType = context.fluidType === "steam" ? "steam" : "liquid";
-  const fallback = buildAnswerFallback(input, normalizedTurbines);
-  const turbinesPayload = turbinesToMap(normalizedTurbines);
+  const fallback = buildAnswerFallback(input, effectiveTurbines);
+  const turbinesPayload = turbinesToMap(effectiveTurbines);
 
   if (!API_URL) {
     await delay(350);
@@ -203,7 +254,7 @@ export async function fetchDelivery(text, context = {}) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const skipAdapt = data.fallback === false;
-    return normalizePayload(data, input, normalizedTurbines, skipAdapt);
+    return normalizePayload(data, input, effectiveTurbines, skipAdapt);
   } catch (e) {
     console.warn("fetchDelivery fallback:", e.message);
     return { ...fallback, fallback: true };

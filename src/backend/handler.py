@@ -11,6 +11,7 @@ from prompts import SYSTEM_PROMPT, build_user_prompt
 from schemas import (
     DELIVERY_TITLE,
     MAX_TEXT_LEN,
+    apply_question_scene,
     clean_delivery_items,
     format_turbine_recap,
     parse_request_body,
@@ -33,16 +34,17 @@ def _json_response(status: int, body: dict) -> dict:
 
 
 def deliver(question: str, fluid_type: str, turbines: dict[str, str]) -> dict:
-    recap = format_turbine_recap(turbines)
+    effective_turbines = apply_question_scene(question, turbines)
+    recap = format_turbine_recap(effective_turbines)
 
     if not question:
-        return build_fallback_response(question, fluid_type, turbines)
+        return build_fallback_response(question, fluid_type, effective_turbines)
 
     if not get_api_key():
-        return build_fallback_response(question, fluid_type, turbines)
+        return build_fallback_response(question, fluid_type, effective_turbines)
 
     try:
-        user_prompt = build_user_prompt(question, fluid_type, turbines)
+        user_prompt = build_user_prompt(question, fluid_type, effective_turbines)
         raw_items = generate_delivery_items(SYSTEM_PROMPT, user_prompt)
         items = clean_delivery_items(raw_items)
         if not items:
@@ -51,7 +53,7 @@ def deliver(question: str, fluid_type: str, turbines: dict[str, str]) -> dict:
         return {
             "question": question,
             "fluidType": fluid_type,
-            "turbines": turbines,
+            "turbines": effective_turbines,
             "turbineRecap": recap,
             "deliveryTitle": DELIVERY_TITLE,
             "deliveryItems": items,
@@ -60,7 +62,7 @@ def deliver(question: str, fluid_type: str, turbines: dict[str, str]) -> dict:
     except Exception as e:
         print(f"deliver AI fallback: {e}")
         traceback.print_exc()
-        return build_fallback_response(question, fluid_type, turbines)
+        return build_fallback_response(question, fluid_type, effective_turbines)
 
 
 def handle_http(method: str, body_raw: str | bytes | None) -> tuple[int, dict]:
