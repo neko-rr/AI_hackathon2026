@@ -249,7 +249,14 @@ export default function App() {
           onTurbineRender={renderTurbine}
         />
 
-        <div className="delivery-rail-wrap">
+        <div
+          className="delivery-rail-wrap"
+          style={
+            fluidState?.hue != null
+              ? { "--delivery-hue": String(Math.round(fluidState.hue)) }
+              : undefined
+          }
+        >
           <div className="delivery-rail">
             <span className="tube-label">配達口</span>
             <div className="tube" />
@@ -306,7 +313,12 @@ export default function App() {
                   通過したタービン：{result.turbineRecap}
                 </p>
               )}
-              {result.fallback && (
+              {result.fallback && isApiConfigured() && (
+                <p className="demo-note">
+                  AI 接続に失敗したため、簡易回答を表示しています。API キーと接続設定を確認してください。
+                </p>
+              )}
+              {result.fallback && !isApiConfigured() && (
                 <p className="demo-note">
                   デモ版の回答です。お試しの質問でお楽しみください。
                 </p>

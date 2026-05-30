@@ -74,6 +74,8 @@ def chat_completion(
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            "User-Agent": "hackathon-deliver/1.0 (IO-Intelligence-Client)",
+            "Accept": "application/json",
         },
     )
 

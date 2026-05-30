@@ -93,7 +93,23 @@ Write-Host "  Account: $($caller.Account) / $($caller.Arn)" -ForegroundColor Gra
 # リポジトリルート（このスクリプトは infra/ 配下にある想定）
 $repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 
-# --- 2. React フロントのビルド ------------------------------------------------
+function Read-DotEnv {
+    param([string]$Path)
+    $map = @{}
+    if (-not (Test-Path -LiteralPath $Path)) { return $map }
+    Get-Content -LiteralPath $Path -Encoding UTF8 | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith("#")) { return }
+        $idx = $line.IndexOf("=")
+        if ($idx -lt 1) { return }
+        $key = $line.Substring(0, $idx).Trim()
+        $val = $line.Substring($idx + 1).Trim().Trim('"').Trim("'")
+        if ($key) { $map[$key] = $val }
+    }
+    return $map
+}
+
+$rootEnv = Read-DotEnv (Join-Path $repoRoot ".env")
 if (-not $SkipBuild) {
     if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
         throw "npm が見つかりません。Node.js をインストールするか、-SkipBuild を付けてください。"
@@ -116,9 +132,18 @@ if (-not $SkipBuild) {
         }
         if ($LASTEXITCODE -ne 0) { throw "npm install が失敗しました (exit $LASTEXITCODE)" }
 
+        $viteApiUrl = $rootEnv["VITE_API_URL"]
+        if ($viteApiUrl) {
+            $env:VITE_API_URL = $viteApiUrl
+            Write-Host "  VITE_API_URL を .env から読み込みました" -ForegroundColor Gray
+        } else {
+            Write-Warning ".env に VITE_API_URL がありません。ビルドはデモ用フォールバックのみになります。"
+        }
+
         Write-Host "ビルド中 (npm run build)..." -ForegroundColor Cyan
         & npm run build
         if ($LASTEXITCODE -ne 0) { throw "npm run build が失敗しました (exit $LASTEXITCODE)" }
+        Remove-Item Env:VITE_API_URL -ErrorAction SilentlyContinue
     } finally {
         Pop-Location
     }
