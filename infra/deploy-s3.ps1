@@ -227,8 +227,9 @@ if ($MakePublic) {
     } | ConvertTo-Json -Depth 5 -Compress
 
     # 一時ファイル経由で渡す（PowerShell の引用符崩れを避ける）
+    # PS5.1 の -Encoding utf8 は BOM 付きになり AWS CLI が読めないため BOM なしで書く
     $tmp = New-TemporaryFile
-    Set-Content -LiteralPath $tmp -Value $policy -Encoding utf8
+    [System.IO.File]::WriteAllText($tmp.FullName, $policy, (New-Object System.Text.UTF8Encoding($false)))
     try {
         Invoke-Aws s3api put-bucket-policy --bucket $Bucket --policy "file://$($tmp.FullName)"
     } finally {

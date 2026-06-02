@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     deliver API を Lambda + HTTP API Gateway にデプロイする。
 
@@ -136,7 +136,8 @@ try {
     } | ConvertTo-Json -Depth 5 -Compress
 
     $trustFile = New-TemporaryFile
-    Set-Content -LiteralPath $trustFile -Value $trust -Encoding utf8
+    # PowerShell 5.1 の -Encoding utf8 は BOM 付きになり AWS CLI が読めないため BOM なしで書く
+    [System.IO.File]::WriteAllText($trustFile.FullName, $trust, (New-Object System.Text.UTF8Encoding($false)))
     try {
         $roleJson = Invoke-Aws iam create-role `
             --role-name $roleName `
@@ -161,10 +162,14 @@ try {
     $functionExists = $false
 }
 
-$envJson = ($lambdaEnv.GetEnumerator() | ForEach-Object {
-    @{ Variable = $_.Key; Value = $_.Value }
-}) | ConvertTo-Json -Compress
-$envPayload = "{`"Variables`":$envJson}"
+# Lambda の --environment は {"Variables":{"KEY":"VALUE"}} のマップ形式。
+# クォート付きJSONを native exe に直接渡すと壊れるため、一時ファイル経由(file://)で渡す。
+$varsMap = @{}
+foreach ($kv in $lambdaEnv.GetEnumerator()) { $varsMap[$kv.Key] = [string]$kv.Value }
+$envObj = @{ Variables = $varsMap } | ConvertTo-Json -Compress -Depth 5
+$envFile = New-TemporaryFile
+[System.IO.File]::WriteAllText($envFile.FullName, $envObj, (New-Object System.Text.UTF8Encoding($false)))
+$envPayload = "file://$($envFile.FullName)"
 
 if (-not $functionExists) {
     Write-Host "Lambda 関数 '$FunctionName' を作成中..." -ForegroundColor Cyan
